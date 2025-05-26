@@ -1,0 +1,34 @@
+pipeline {
+    agent any  // This will default to master if no agents are defined
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                echo "Build"
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+      
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo "Deployed"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
