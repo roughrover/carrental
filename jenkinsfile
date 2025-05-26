@@ -3,11 +3,10 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/roughrover/carrental.git'
+                git branch: 'main', url: 'https://github.com/roughrover/carrental.git'
             }
         }
 
-        // Comment out or remove this stage if you're skipping build
         // stage('Build') {
         //     steps {
         //         sh 'docker-compose build'
@@ -16,8 +15,4 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker compose up -d'  // Or replace with `docker run ...` commands
-            }
-        }
-    }
-}
+                sh 'docker compose
