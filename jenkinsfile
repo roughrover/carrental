@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'git@github.com:your-username/your-repo.git'
+                git branch: 'main', url: 'git@github.com:roughrover/carrental.git'
             }
         }
 
@@ -22,14 +22,14 @@ pipeline {
         stage('Test') {
             steps {
                 // Example test command
-                sh 'docker-compose run --rm web php -l index.php'
+                sh 'docker compose run --rm web php -l index.php'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'docker-compose down'
-                sh 'docker-compose up -d'
+                sh 'docker compose down'
+                sh 'docker compose up -d'
             }
         }
     }
