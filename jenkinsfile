@@ -1,45 +1,23 @@
 pipeline {
     agent any
-
-    environment {
-        COMPOSE_FILE = 'docker-compose.yaml'
-        SERVICE_NAME = 'web' // Change if your docker-compose uses a different service name
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/roughrover/carrental.git'
+                git 'https://github.com/roughrover/carrental.git'
             }
         }
 
-        stage('Build') {
-            steps {
-                sh 'docker compose build'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                // Example test command
-                sh 'docker compose run --rm web php -l index.php'
-            }
-        }
+        // Comment out or remove this stage if you're skipping build
+        // stage('Build') {
+        //     steps {
+        //         sh 'docker-compose build'
+        //     }
+        // }
 
         stage('Deploy') {
             steps {
-                sh 'docker compose down'
-                sh 'docker compose up -d'
+                sh 'docker-compose up -d'  // Or replace with `docker run ...` commands
             }
-        }
-    }
-
-    post {
-        success {
-            echo '🎉 Deployment successful!'
-        }
-        failure {
-            echo '❌ Build or deploy failed.'
         }
     }
 }
