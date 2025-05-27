@@ -1,5 +1,10 @@
 pipeline {
     agent any
+
+    environment {
+        COMPOSE_PROJECT_NAME = "carrental"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -7,16 +12,28 @@ pipeline {
             }
         }
 
-        // stage('Build') {
-        //     steps {
-        //         sh 'docker-compose build'
-        //     }
-        // }
-
-        stage('Deploy') {
+        stage('Build and Deploy') {
             steps {
-                sh 'docker-compose up -d --build'
+                sh '''
+                    echo "Stopping existing containers if any..."
+                    docker-compose down || true
+
+                    echo "Building and starting containers..."
+                    docker-compose up -d --build
+                '''
             }
+        }
+
+        stage('Verify') {
+            steps {
+                sh 'docker ps'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed.'
         }
     }
 }
