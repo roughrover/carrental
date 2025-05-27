@@ -1,14 +1,17 @@
 FROM php:8.1-apache
 
-# Install required PHP extensionss
+# Install necessary PHP extensions (customize if needed)
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Enable Apache mod_rewrite
+# Copy app files into Apache web root
+COPY ./src /var/www/html
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html
+
+# Enable mod_rewrite (Laravel/PHP apps often need it)
 RUN a2enmod rewrite
 
-# Copy project files to web root
-COPY . /var/www/html/
-
-# Set correct permissions
-RUN chown -R www-data:www-data /var/www/html
+# Custom Apache config
+COPY apache-config.conf /etc/apache2/sites-enabled/000-default.conf
 
