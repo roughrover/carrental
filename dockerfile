@@ -1,16 +1,16 @@
 FROM php:8.1-apache
 
-# Install necessary PHP extensions
+# Install PHP extensions
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Enable Apache mod_rewrite (used by Laravel)
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Copy Laravel app into Apache web root
-COPY carrental/ /var/www/html/
+# Copy app files into web root
+COPY . /var/www/html/
 
-# Set correct permissions
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html
 
-# Custom Apache config
+# Use your custom Apache config
 COPY apache-config.conf /etc/apache2/sites-enabled/000-default.conf
