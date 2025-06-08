@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')  // Docker Hub creds ID in Jenkins
         IMAGE_NAME = "roughrover/carrental-app:latest"
     }
 
@@ -15,19 +14,17 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh "docker build -t ${IMAGE_NAME} ."
-                }
+                sh "docker build -t ${IMAGE_NAME} ."
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh """
-                        echo ${DOCKERHUB_CREDENTIALS.password} | docker login -u ${DOCKERHUB_CREDENTIALS.username} --password-stdin
-                        docker push ${IMAGE_NAME}
-                        docker logout
+                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    docker push ${IMAGE_NAME}
+                    docker logout
                     """
                 }
             }
@@ -35,31 +32,27 @@ pipeline {
 
         stage('Cleanup Kubernetes') {
             steps {
-                script {
-                    sh """
-                    kubectl delete deployment mysql carrental-web phpmyadmin --ignore-not-found=true
-                    kubectl delete svc mysql carrental-service phpmyadmin-service --ignore-not-found=true
-                    kubectl delete pvc mysql-pv-claim --ignore-not-found=true
-                    """
-                }
+                sh """
+                kubectl delete deployment mysql carrental-web phpmyadmin --ignore-not-found=true
+                kubectl delete svc mysql carrental-service phpmyadmin-service --ignore-not-found=true
+                kubectl delete pvc mysql-pv-claim --ignore-not-found=true
+                """
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    sh """
-                    kubectl apply -f k8s/mysql-pvc.yaml
-                    kubectl apply -f k8s/mysql-deployment.yaml
-                    kubectl apply -f k8s/mysql-service.yaml
+                sh """
+                kubectl apply -f mysql-pvc.yaml
+                kubectl apply -f mysql-deployment.yaml
+                kubectl apply -f mysql-service.yaml
 
-                    kubectl apply -f k8s/web-deployment.yaml
-                    kubectl apply -f k8s/web-service.yaml
+                kubectl apply -f web-deployment.yaml
+                kubectl apply -f web-service.yaml
 
-                    kubectl apply -f k8s/phpmyadmin-deployment.yaml
-                    kubectl apply -f k8s/phpmyadmin-service.yaml
-                    """
-                }
+                kubectl apply -f phpmyadmin-deployment.yaml
+                kubectl apply -f phpmyadmin-service.yaml
+                """
             }
         }
     }
