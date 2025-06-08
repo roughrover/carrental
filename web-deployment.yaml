@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carrental-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: carrental-web
+  template:
+    metadata:
+      labels:
+        app: carrental-web
+    spec:
+      containers:
+        - name: carrental-web
+          image: roughrover/carrental-app:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_USER
+              value: user
+            - name: DB_PASSWORD
+              value: userpass
+            - name: DB_NAME
+              value: carrental
