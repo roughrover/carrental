@@ -1,68 +1,18 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "roughrover/carrental-app:latest"
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/roughrover/carrental.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Deploy with Docker Compose') {
             steps {
-                sh "docker build -t ${IMAGE_NAME} ."
+                sh 'docker compose down || true'
+                sh 'docker compose up -d --build'
             }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh """
-                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                    docker push ${IMAGE_NAME}
-                    docker logout
-                    """
-                }
-            }
-        }
-
-        stage('Cleanup Kubernetes') {
-            steps {
-                sh """
-                kubectl delete deployment mysql carrental-web phpmyadmin --ignore-not-found=true
-                kubectl delete svc mysql carrental-service phpmyadmin-service --ignore-not-found=true
-                kubectl delete pvc mysql-pv-claim --ignore-not-found=true
-                """
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh """
-                kubectl apply -f mysql-pvc.yaml
-                kubectl apply -f mysql-deployment.yaml
-                kubectl apply -f mysql-service.yaml
-
-                kubectl apply -f web-deployment.yaml
-                kubectl apply -f web-service.yaml
-
-                kubectl apply -f phpmyadmin-deployment.yaml
-                kubectl apply -f phpmyadmin-service.yaml
-                """
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "Deployment succeeded!"
-        }
-        failure {
-            echo "Deployment failed."
         }
     }
 }
