@@ -8,7 +8,7 @@ pipeline {
   stages {
     stage('Clone GitHub Repo') {
       steps {
-        git 'https://github.com/roughrover/carrental-app.git'
+        git 'https://github.com/roughrover/carrental.git'
       }
     }
 
