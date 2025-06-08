@@ -1,40 +1,73 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    DOCKER_IMAGE = "roughrover/carrental-app:latest"
-  }
-
-  stages {
-    stage('Clone GitHub Repo') {
-      steps {
-        git url: 'https://github.com/roughrover/carrental.git', branch: 'main'
-      }
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds-id') // Jenkins dockerhub credentials ID
+        DOCKER_IMAGE = 'roughrover/carrental-app:latest'
+        K8S_MANIFEST_DIR = 'k8s'
     }
 
-    stage('Build Docker Image') {
-      steps {
-        script {
-          docker.build("${DOCKER_IMAGE}")
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/roughrover/carrental.git', branch: 'main'
+            }
         }
-      }
-    }
 
-    stage('Push to Docker Hub') {
-      steps {
-        withDockerRegistry(credentialsId: 'dockerhub-creds', url: '') {
-          script {
-            docker.image("${DOCKER_IMAGE}").push()
-          }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
         }
-      }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh """
+                        echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                    """
+                }
+            }
+        }
+
+        stage('Stop Existing Kubernetes Deployments') {
+            steps {
+                script {
+                    // Delete the deployments and services if exist, ignore errors if not found
+                    sh """
+                        kubectl delete deployment mysql carrental-web phpmyadmin --ignore-not-found=true
+                        kubectl delete pvc mysql-pv-claim --ignore-not-found=true
+                        kubectl delete svc mysql carrental-service phpmyadmin-service --ignore-not-found=true
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    // Apply PVC first, then deployments, then services
+                    sh """
+                        kubectl apply -f ${K8S_MANIFEST_DIR}/mysql-pvc.yaml
+                        kubectl apply -f ${K8S_MANIFEST_DIR}/mysql-deployment.yaml
+                        kubectl apply -f ${K8S_MANIFEST_DIR}/web-deployment.yaml
+                        kubectl apply -f ${K8S_MANIFEST_DIR}/phpmyadmin-deployment.yaml
+                        kubectl apply -f ${K8S_MANIFEST_DIR}/services.yaml
+                    """
+                }
+            }
+        }
     }
 
-    stage('Deploy to Kubernetes') {
-      steps {
-        sh 'kubectl apply -f deployment.yaml'
-        sh 'kubectl apply -f service.yaml'
-      }
+    post {
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed.'
+        }
     }
-  }
 }
