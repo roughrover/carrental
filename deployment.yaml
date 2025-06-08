@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carrental-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: carrental
+  template:
+    metadata:
+      labels:
+        app: carrental
+    spec:
+      containers:
+      - name: carrental
+        image: roughrover/carrental-app:latest
+        ports:
+        - containerPort: 80
