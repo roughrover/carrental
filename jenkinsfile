@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds-id') // Jenkins dockerhub credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // Jenkins dockerhub credentials ID
         DOCKER_IMAGE = 'roughrover/carrental-app:latest'
         K8S_MANIFEST_DIR = 'k8s'
     }
