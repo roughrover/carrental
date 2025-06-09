@@ -1,8 +1,19 @@
 version: '3.8'
 
 services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+
   web:
     build: .
+    restart: unless-stopped
     ports:
       - "8082:80"
     depends_on:
@@ -11,7 +22,7 @@ services:
   db:
     image: mysql:5.7
     container_name: mysql_db
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: carrental
@@ -25,7 +36,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    restart: always
+    restart: unless-stopped
     ports:
       - "8081:80"
     environment:
@@ -34,3 +45,4 @@ services:
 
 volumes:
   db_data: {}
+  jenkins_home: {}
