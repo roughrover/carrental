@@ -10,19 +10,20 @@ pipeline {
 
         stage('Deploy with Docker Compose') {
             steps {
-                // Check if Jenkins container exists
                 sh '''
-                if [ "$(docker ps -aq -f name=^jenkins$)" ]; then
-                    echo "Jenkins container exists. Skipping Jenkins service start."
-                    # Bring down other containers except jenkins and bring up others
-                    docker compose down
-                    # Start all except jenkins (override compose or remove jenkins service temporarily)
-                    docker compose up -d --build --no-recreate
-                else
-                    echo "Jenkins container does not exist. Starting all containers."
-                    docker compose down
-                    docker compose up -d --build
-                fi
+                    if [ "$(docker ps -aq -f name=^jenkins$)" ]; then
+                        echo "Jenkins container exists. Skipping Jenkins service start."
+                        # Stop and remove only non-Jenkins containers
+                        docker compose stop mysql_db carrental-phpmyadmin web || true
+                        docker compose rm -f mysql_db carrental-phpmyadmin web || true
+
+                        # Start only non-Jenkins services
+                        docker compose up -d --build mysql_db carrental-phpmyadmin web
+                    else
+                        echo "Jenkins container not found. Starting all containers."
+                        docker compose down || true
+                        docker compose up -d --build
+                    fi
                 '''
             }
         }
