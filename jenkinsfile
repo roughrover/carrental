@@ -15,9 +15,9 @@ pipeline {
                     if (jenkinsRunning) {
                         echo "Jenkins container exists. Skipping jenkins service."
                         sh '''
-                            docker compose stop db phpmyadmin web || true
-                            docker compose rm -f db phpmyadmin web || true
-                            docker compose up -d --build db phpmyadmin web
+                            docker compose stop web db phpmyadmin prometheus grafana cadvisor || true
+                            docker compose rm -f web db phpmyadmin prometheus grafana cadvisor || true
+                            docker compose up -d --build web db phpmyadmin prometheus grafana cadvisor
                         '''
                     } else {
                         echo "Jenkins container not found. Starting all services."
