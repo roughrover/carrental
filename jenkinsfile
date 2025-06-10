@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        COMPOSE_FILE = 'docker-compose.yml'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -12,37 +8,24 @@ pipeline {
             }
         }
 
-        stage('Build & Deploy Containers') {
+        stage('Deploy with Docker Compose') {
             steps {
-                dir("${env.WORKSPACE}") {
-                    script {
-                        def jenkinsRunning = sh(script: 'docker ps -aq -f name=^jenkins$', returnStdout: true).trim()
-                        if (jenkinsRunning) {
-                            echo "✅ Jenkins container is running. Redeploying app services only..."
-
-                            // Stop and remove only app services
-                            sh """
-                                docker compose stop web db phpmyadmin || true
-                                docker compose rm -f web db phpmyadmin || true
-                            """
-
-                            // Build and start app services
-                            sh "docker compose up -d --build web db phpmyadmin"
-                        } else {
-                            echo "⚠️ Jenkins container not found. Bringing up all services..."
-                            sh "docker compose down || true"
-                            sh "docker compose up -d --build"
-                        }
+                script {
+                    def jenkinsRunning = sh(script: 'docker ps -aq -f name=^jenkins$', returnStdout: true).trim()
+                    if (jenkinsRunning) {
+                        echo "Jenkins container exists. Skipping jenkins service."
+                        sh '''
+                            docker compose stop db phpmyadmin web || true
+                            docker compose rm -f db phpmyadmin web || true
+                            docker compose up -d --build db phpmyadmin web
+                        '''
+                    } else {
+                        echo "Jenkins container not found. Starting all services."
+                        sh 'docker compose down || true'
+                        sh 'docker compose up -d --build'
                     }
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            echo "🧼 Cleanup and status check:"
-            sh "docker ps"
         }
     }
 }
